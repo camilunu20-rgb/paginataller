@@ -898,6 +898,13 @@ dialog::backdrop  {
 
 
 
+.previews-carpeta{display:flex;height:148px;overflow:hidden;align-items:center;justify-content:center;margin:4px 0 12px;border-radius:12px;background:#f2f4f8}
+.miniatura-enlace{display:block;width:100%;height:100%;overflow:hidden;border-radius:10px;background:#f2f4f8}
+.miniatura-carpeta{display:block;width:100%;height:100%;object-fit:cover}
+.video-carpeta{display:block;width:100%;height:100%;object-fit:cover;background:#e8edf5}
+.pdf-carpeta{width:100%;height:100%;min-width:0}
+.pdf-carpeta iframe{display:block;width:100%;height:100%;border:1px solid #e1e5ee;border-radius:10px;background:#fff}
+.pdf-carpeta a{display:block;overflow:hidden;padding:4px 2px;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
 .vista-archivo  {
   
   display:block;
@@ -1238,3 +1245,11 @@ button[data-eliminar-proyecto]:focus-visible {
         align-items: stretch;
     }
 }
+
+
+.archivo-miniatura{display:flex;align-items:center;justify-content:center;min-height:120px;border-radius:10px;background:#f2f4f8;color:#445;overflow:hidden}
+.archivo-publicado{min-width:0}
+.archivo-imagen-enlace{display:block;overflow:hidden;border-radius:10px;background:#f2f4f8}
+.archivo-imagen{display:block;width:100%;max-height:390px;object-fit:contain}
+.archivo-video{display:block;width:100%;max-height:420px;border-radius:10px;background:#111}
+.archivo-pdf{display:block;width:100%;height:460px;border:1px solid #e1e5ee;border-radius:10px;background:#fff}

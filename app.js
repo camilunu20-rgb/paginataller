@@ -7,6 +7,18 @@ const get=(k,d)=>{try{return JSON.parse(localStorage.getItem('unm_'+k))??d}catch
 const set=(k,v)=>localStorage.setItem('unm_'+k,JSON.stringify(v));
 const estado={cuenta:null,rol:'Estudiante',filtro:'Todas',registro:false,chat:'Comunidad',carpetaActual:null};
 const categorias=['Todas','Animación','Sonido','3D','InDesign','Mockup','PJ5S','Videojuegos'];
+// Carpetas y archivos incluidos en el sitio. Se publican junto con GitHub Pages.
+const carpetasPrecargadas=[
+ {id:'dibujo-asistido-por-pc',nombre:'dibujo asistido por pc',titulo:'Dibujo asistido por PC',portada:'gymjoelmiño.png',archivos:['poster_gim.pdf','gymjoelmiño.png']},
+ {id:'maquetacion',nombre:'maquetacion',titulo:'Maquetación',portada:'maquetacion (1).png',archivos:['maquetacion (1).png']},
+ {id:'seminario',nombre:'seminario',titulo:'Seminario',portada:'seminario.pdf',archivos:['seminario.pdf']},
+ {id:'sistemas-representacion-2do',nombre:'sistemas de represetancion 2do año',titulo:'Sistemas de representación · 2.º año',portada:'yaguarete.pdf',archivos:['yaguarete.pdf']},
+ {id:'sistemas-representacion-3er',nombre:'sistemas de represetancion 3er año',titulo:'Sistemas de representación · 3.º año',portada:'elartxart.png',archivos:['elartxart.png','sist rep 3er 1er cuatri.png','Com02_El_niño_y_el_barco_Duarte_Elizalde_farias.mp4','Sistema de Representacion.mp4']},
+ {id:'taller-diseno-2do',nombre:'taller de diseño 2do año',titulo:'Taller de diseño · 2.º año',portada:'El conde Lucanor.mp4',archivos:['El conde Lucanor.mp4']},
+ {id:'taller-diseno-3er',nombre:'taller de diseño 3er año',titulo:'Taller de diseño · 3.º año',portada:'Com02_El_niño_y_el_barco_Duarte_Elizalde_farias (1).mp4',archivos:['Com02_El_niño_y_el_barco_Duarte_Elizalde_farias (1).mp4','instalacioninteractiva.pdf','Roche_Justine-Saracho_Damian-COM2-TPFINAL.mp4','Tp Final _Cautiva_ - Suarez Iris y Solis Daniel.mp4']},
+ {id:'tecnologia-2do',nombre:'tecnologia 2do año',titulo:'Tecnología · 2.º año',portada:'DUARTE, ELIZALDE, MEZA, SAYAL.mp4',archivos:['cenicienta.pdf','DUARTE, ELIZALDE, MEZA, SAYAL.mp4']},
+ {id:'tecnologia-3er',nombre:'tecnologia 3er año',titulo:'Tecnología · 3.º año',portada:'TP 1 - TECNOLOGÍA DE DISEÑO MULTIMEDIAL I - ROCHE JUSTINE Y CORREA CAMILA (1) (1).pdf',archivos:['TP 1 - TECNOLOGÍA DE DISEÑO MULTIMEDIAL I - ROCHE JUSTINE Y CORREA CAMILA (1) (1).pdf']}
+];
 const leerCuentas=()=>get('cuentas',{});
 const cuenta=()=>estado.cuenta||'invitado';
 const clave=k=>`${k}_${cuenta()}`;
@@ -461,6 +473,62 @@ function renderEquipos(){
  });
 }
 
+// Carga un fotograma cercano al inicio para evitar que las miniaturas de video queden negras.
+const prepararFotogramaVideo=video=>{
+ const buscarFotograma=()=>{
+  if(!Number.isFinite(video.duration)||video.duration<=0)return;
+  try{video.currentTime=Math.min(1,video.duration*0.08)}catch{}
+ };
+ video.addEventListener('seeked',()=>video.pause(),{once:true});
+ video.addEventListener('loadedmetadata',buscarFotograma,{once:true});
+ if(video.readyState>=1)buscarFotograma();
+};
+// Extiende la vista de carpetas con el material fijo publicado junto al sitio.
+const renderCarpetasLocales=renderCarpetas;
+renderCarpetas=function(){
+ const fijaId=estado.carpetaActual?.startsWith('precargada:')?estado.carpetaActual.slice('precargada:'.length):null;
+ const fija=carpetasPrecargadas.find(c=>c.id===fijaId);
+ if(!fija){
+  renderCarpetasLocales();
+  if(!estado.carpetaActual){
+   const tarjetas=carpetasPrecargadas.map(c=>{
+    const nombre=c.portada||c.archivos[0];
+    const archivo=`${c.nombre}/${nombre}`.split('/').map(encodeURIComponent).join('/');
+    const ext=nombre.split('.').pop().toLowerCase();
+    let preview='';
+    if(['png','jpg','jpeg','gif','webp'].includes(ext))preview=`<a class="miniatura-enlace" href="${escapar(archivo)}" target="_blank" rel="noopener"><img class="miniatura-carpeta" loading="lazy" src="${escapar(archivo)}" alt="Vista previa de ${escapar(c.nombre)}"></a>`;
+    else if(['mp4','webm','ogg'].includes(ext))preview=`<video class="video-carpeta" controls muted playsinline preload="metadata"><source src="${escapar(archivo)}" type="video/${ext}">Tu navegador no puede reproducir este video.</video>`;
+    else if(ext==='pdf')preview=`<div class="pdf-carpeta"><iframe loading="lazy" src="${escapar(archivo)}#toolbar=0&navpanes=0" title="Vista previa de ${escapar(c.nombre)}"></iframe></div>`;
+    else preview=`<div class="archivo-miniatura">📄 ${escapar(nombre)}</div>`;
+    return `<article class="tarjeta panel carpeta-tarjeta">
+     <h3>📁 ${escapar(c.titulo||c.nombre)}</h3><p>${c.archivos.length} ${c.archivos.length===1?'archivo':'archivos'} publicados</p>
+     <div class="previews-carpeta">${preview}</div>
+     <div class="acciones"><button class="primario" data-abrir-precargada="${escapar(c.id)}">Abrir carpeta</button></div></article>`;
+
+   }).join('');
+   $('#carpetas').insertAdjacentHTML('afterbegin',tarjetas);
+   $$('.video-carpeta').forEach(prepararFotogramaVideo);
+   $$('[data-abrir-precargada]').forEach(b=>b.onclick=()=>{estado.carpetaActual=`precargada:${b.dataset.abrirPrecargada}`;renderCarpetas()});
+  }
+  return;
+ }
+ $('#ruta-carpetas').textContent=`Inicio / Mis carpetas / ${fija.titulo||fija.nombre}`;
+ $('#volver-carpeta').classList.remove('oculto');
+ $('#adjuntar-archivo').classList.add('oculto');
+ const tipoDe=nombre=>{const ext=nombre.split('.').pop().toLowerCase();return ({pdf:'PDF',png:'Imagen PNG',jpg:'Imagen JPG',jpeg:'Imagen JPG',mp4:'Video MP4'})[ext]||'Archivo'};
+ const ruta=(nombre)=>`${fija.nombre}/${nombre}`.split('/').map(encodeURIComponent).join('/');
+ const archivoHtml=nombre=>{
+  const archivo=ruta(nombre);
+  const ext=nombre.split('.').pop().toLowerCase();
+  let vista='';
+  if(['png','jpg','jpeg','gif','webp'].includes(ext))vista=`<a class="archivo-imagen-enlace" href="${escapar(archivo)}" target="_blank" rel="noopener"><img class="archivo-imagen" loading="lazy" src="${escapar(archivo)}" alt="${escapar(nombre)}"></a>`;
+  else if(['mp4','webm','ogg'].includes(ext))vista=`<video class="archivo-video" controls muted playsinline preload="metadata"><source src="${escapar(archivo)}" type="video/${ext}">Tu navegador no puede reproducir este video.</video>`;
+  else if(ext==='pdf')vista=`<iframe class="archivo-pdf" loading="lazy" src="${escapar(archivo)}" title="Vista previa de ${escapar(nombre)}"></iframe>`;
+  return `<article class="tarjeta panel archivo-publicado"><h3>${escapar(nombre)}</h3><p>${tipoDe(nombre)}</p>${vista}<div class="acciones"><a class="primario" href="${escapar(archivo)}" target="_blank" rel="noopener">Abrir en otra pestaña</a></div></article>`;
+ };
+ $('#carpetas').innerHTML=fija.archivos.map(archivoHtml).join('')||'<p class="vacio">Esta carpeta todavía no tiene archivos.</p>';
+ $$('.archivo-video').forEach(prepararFotogramaVideo);
+};
 function renderTodo(){
  renderCategorias();
  renderCarpetas();
@@ -475,3 +543,4 @@ try{
  if(s?.mail)entrar(s.mail,s.rol);
 }catch{}
 })();
+
